@@ -6,9 +6,26 @@ late-ramping default with an earlier, quieter-but-cooler curve.
 ## Install / remove
 
 ```sh
+git clone --recurse-submodules https://github.com/ayushdeolasee/fan-curve.git
+cd fan-curve
 sudo ./install.sh      # installs a LaunchDaemon, starts at every boot
 sudo ./uninstall.sh    # removes it, fans go back to macOS auto control
 ```
+
+## Restart or reclaim fan control
+
+```sh
+fan-start             # asks for your sudo password once if needed
+# Before reinstalling to add the command, use: ./start.sh
+```
+
+This stops the Macs Fan Control background helper and restarts fancurve,
+then checks that both fans are under its control. Quit the Macs Fan Control
+app first if it is open. The helper may return after a reboot or when you
+reopen its app; run `fan-start` again, or uninstall Macs Fan Control if you
+no longer use it. fancurve itself starts automatically at boot.
+
+Re-run `sudo ./install.sh` to install `fan-start` on an existing setup.
 
 ## Tune it
 

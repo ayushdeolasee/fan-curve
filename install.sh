@@ -93,6 +93,12 @@ exec "$DIR/status.sh" "\$@"
 EOF
 chmod 755 "$BIN"
 
+cat > /usr/local/bin/fan-start <<EOF
+#!/bin/bash
+exec /bin/bash "$DIR/start.sh" "\$@"
+EOF
+chmod 755 /usr/local/bin/fan-start
+
 launchctl bootstrap system "$PLIST"
 sleep 3
 
