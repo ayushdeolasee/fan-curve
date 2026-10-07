@@ -14,7 +14,7 @@ fi
 
 launchctl bootout system "$PLIST" 2>/dev/null || true
 rm -f "$PLIST"
-rm -f /usr/local/bin/fan-status
+rm -f /usr/local/bin/fan-curve /usr/local/bin/fan-status /usr/local/bin/fan-start
 
 # Belt and braces: the daemon restores auto mode on SIGTERM, but force it anyway.
 "$SMC" -k F0Md -w 00 >/dev/null 2>&1 || true

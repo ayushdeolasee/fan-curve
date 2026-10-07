@@ -83,15 +83,16 @@ EOF
 chown root:wheel "$PLIST"
 chmod 644 "$PLIST"
 
-# Install a `fan-status` command — a wrapper file (not a symlink) so status.sh
-# still resolves the smc/smctemp tools relative to this repo.
-BIN=/usr/local/bin/fan-status
+# Use a wrapper rather than a symlink to preserve repo-relative tool paths.
+BIN=/usr/local/bin/fan-curve
 install -d /usr/local/bin
 cat > "$BIN" <<EOF
 #!/bin/bash
-exec "$DIR/status.sh" "\$@"
+exec /bin/bash "$DIR/fan-curve" "\$@"
 EOF
 chmod 755 "$BIN"
+# Remove commands from older installations.
+rm -f /usr/local/bin/fan-status /usr/local/bin/fan-start
 
 launchctl bootstrap system "$PLIST"
 sleep 3
@@ -108,7 +109,8 @@ done
 if [[ "$MODE" == "1" ]]; then
     echo "✓ Installed and running — fans are under fancurve control."
     echo "  Tune:      edit $CONF (applies live)"
-    echo "  Watch:     tail -f $LOG   or   fan-status"
+    echo "  Watch:     fan-curve status   or   fan-curve logs"
+    echo "  Control:   fan-curve start | stop | restart"
     echo "  Remove:    sudo $DIR/uninstall.sh"
 else
     echo "❌ Daemon installed but fans are NOT in manual mode — check $LOG" >&2
