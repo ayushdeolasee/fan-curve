@@ -12,20 +12,27 @@ sudo ./install.sh      # installs a LaunchDaemon, starts at every boot
 sudo ./uninstall.sh    # removes it, fans go back to macOS auto control
 ```
 
-## Restart or reclaim fan control
+## CLI
+
+The installer adds one command, `fan-curve`:
 
 ```sh
-fan-start             # asks for your sudo password once if needed
-# Before reinstalling to add the command, use: ./start.sh
+fan-curve status      # temperatures, RPM, and current fan controller
+fan-curve start       # reclaim control and run in the background
+fan-curve stop        # restore macOS control until started again or rebooted
+fan-curve restart     # restart and reclaim control
+fan-curve logs        # follow daemon logs (Ctrl-C stops viewing, not the daemon)
 ```
 
-This stops the Macs Fan Control background helper and restarts fancurve,
-then checks that both fans are under its control. Quit the Macs Fan Control
-app first if it is open. The helper may return after a reboot or when you
-reopen its app; run `fan-start` again, or uninstall Macs Fan Control if you
-no longer use it. fancurve itself starts automatically at boot.
+Only start, stop, and restart request sudo. Start/restart stop the Macs Fan
+Control background helper and check that both fans are under fancurve control.
+Quit the Macs Fan Control app first if it is open. Its helper may return after
+a reboot or when you reopen the app; run `fan-curve start` again, or uninstall
+Macs Fan Control if you no longer use it. fancurve starts automatically at boot.
 
-Re-run `sudo ./install.sh` to install `fan-start` on an existing setup.
+Re-run `sudo ./install.sh` to install the CLI on an existing setup (replacing
+`fan-start` and `fan-status`). Before reinstalling, use `./fan-curve <command>`.
+Keep this repository in place: the installed command uses its scripts and tools.
 
 ## Tune it
 
@@ -46,8 +53,8 @@ Loudness reference for this machine: ≤2200 RPM near-silent, ~3000 soft hum,
 Watch what it's doing:
 
 ```sh
-fan-status                     # temps, RPM, mode (installed by install.sh; no sudo)
-tail -f /var/log/fancurve.log  # daemon log (logs only on changes)
+fan-curve status             # temps, RPM, mode (no sudo)
+fan-curve logs               # daemon log (logs only on changes)
 python3 fancurve.py --dry-run  # simulate the curve without touching fans
 ```
 

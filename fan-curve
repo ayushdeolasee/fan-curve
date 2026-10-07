@@ -1,0 +1,74 @@
+#!/bin/bash
+# CLI for the launchd-managed fan curve daemon.
+set -euo pipefail
+
+DIR="$(cd "$(dirname "$0")" && pwd)"
+LABEL=com.ayush.fancurve
+PLIST=/Library/LaunchDaemons/$LABEL.plist
+HELPER=com.crystalidea.macsfancontrol.smcwrite
+SMC="$DIR/tools/smcFanControl/smc-command/smc"
+
+if [[ $# -gt 1 ]]; then
+    echo "Usage: fan-curve {status|start|stop|restart|logs}" >&2
+    exit 1
+fi
+
+case "${1:-help}" in
+    status) exec /bin/bash "$DIR/status.sh" ;;
+    logs) exec tail -n 20 -f /var/log/fancurve.log ;;
+    help|-h|--help)
+        echo "Usage: fan-curve {status|start|stop|restart|logs}"
+        echo "start/restart: reclaim fan control and run in the background"
+        echo "stop: restore macOS control until started again or rebooted"
+        exit 0 ;;
+    start|stop|restart) ;;
+    *) echo "Unknown command: $1. Run fan-curve --help." >&2; exit 1 ;;
+esac
+
+if [[ $EUID -ne 0 ]]; then
+    exec sudo /bin/bash "$DIR/fan-curve" "$@"
+fi
+
+if [[ "$1" == stop ]]; then
+    if launchctl print "system/$LABEL" >/dev/null 2>&1; then
+        launchctl bootout "system/$LABEL"
+    fi
+    # Also restore explicitly if the daemon was already stopped.
+    "$SMC" -k F0Md -w 00 >/dev/null
+    "$SMC" -k F1Md -w 00 >/dev/null
+    echo "✓ fancurve stopped; fans returned to macOS automatic control."
+    exit 0
+fi
+
+if [[ ! -f "$PLIST" ]]; then
+    echo "fancurve is not installed. Run: sudo $DIR/install.sh" >&2
+    exit 1
+fi
+
+if pgrep -if 'Macs Fan Control.app/Contents/MacOS|macsfancontrol.app/Contents/MacOS' >/dev/null; then
+    echo "Quit the Macs Fan Control app first, then run fan-curve $1 again." >&2
+    exit 1
+fi
+
+if launchctl print "system/$HELPER" >/dev/null 2>&1; then
+    launchctl bootout "system/$HELPER"
+fi
+
+if launchctl print "system/$LABEL" >/dev/null 2>&1; then
+    launchctl kickstart -k "system/$LABEL"
+else
+    launchctl bootstrap system "$PLIST"
+fi
+
+# Manual mode may take a few seconds to settle after restart.
+for _ in {1..25}; do
+    if "$SMC" -k F0Md -r | grep -Eq '\] +1 ' &&
+       "$SMC" -k F1Md -r | grep -Eq '\] +1 '; then
+        echo "✓ fancurve is running in the background and controlling both fans."
+        exit 0
+    fi
+    sleep 0.2
+done
+
+echo "fancurve did not take control of both fans. Check /var/log/fancurve.log" >&2
+exit 1
