@@ -1,0 +1,6 @@
+[submodule "tools/smctemp"]
+	path = tools/smctemp
+	url = https://github.com/narugit/smctemp
+[submodule "tools/smcFanControl"]
+	path = tools/smcFanControl
+	url = https://github.com/hholtmann/smcFanControl
